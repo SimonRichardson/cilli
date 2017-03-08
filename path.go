@@ -12,14 +12,25 @@ var (
 	ErrUnexpectedExpression = errors.New("Unexpected Expression")
 )
 
+type PathPredicate struct {
+	Equality   func(s.Element, string, string) bool
+	Inequality func(s.Element, string, string) bool
+}
+
 type Path struct {
 	expression s.PathExpression
+	predicate  PathPredicate
 }
 
 func NewPath(expression s.PathExpression) *Path {
 	return &Path{
 		expression: expression,
 	}
+}
+
+func (p *Path) With(predicate PathPredicate) *Path {
+	p.predicate = predicate
+	return p
 }
 
 func (p *Path) Describe(w *bufio.Writer) error {
@@ -48,7 +59,7 @@ func (p *Path) Execute(element s.Element) ([]s.Element, error) {
 	// Loop through everything.
 loop:
 	for {
-		// fmt.Println(">", expression.Type(), expression)
+		//fmt.Println(">", expression.Type(), expression)
 
 		switch expression.Type() {
 		case s.PETWildcard:
@@ -68,9 +79,9 @@ loop:
 				continue loop
 			}
 			return nil, ErrUnexpectedExpression
-		case s.PETNameDescendants:
+		case s.PETNameDescendants, s.PETInstance:
 			if x, ok := left(expression); ok {
-				// fmt.Println("Left", x.Type(), x, len(nodes))
+				//fmt.Println("Left", x.Type(), x, len(nodes))
 				switch x.Type() {
 				case s.PETName:
 					nodes = filterByName(x, nodes)
@@ -89,11 +100,11 @@ loop:
 				}
 
 				if y, ok := right(expression); ok {
-					// fmt.Println("Right", y.Type(), y, len(nodes))
+					//fmt.Println("Right", y.Type(), y, len(nodes))
 					switch y.Type() {
 					case s.PETName:
 						expression = expressions.MakePathDescendants(s.PDTContext, y)
-					case s.PETNameDescendants:
+					case s.PETNameDescendants, s.PETInstance:
 						nodes = getContextChildren(nodes)
 						expression = y
 					case s.PETWildcard:
@@ -103,6 +114,17 @@ loop:
 							s.PDTContext,
 							expressions.MakePathNameDescendants(y, expressions.MakePathWildcard()),
 						)
+					case s.PETGroup:
+						if exprs, ok := list(y); ok {
+							for _, v := range exprs {
+								switch v.Type() {
+								case s.PETAttribute:
+								}
+							}
+							expression = expressions.MakePathWildcard()
+							continue loop
+						}
+						return nil, ErrUnexpectedExpression
 					default:
 						return nil, ErrUnexpectedExpression
 					}
@@ -146,6 +168,13 @@ func descendants(expression s.PathExpression) (s.PathExpression, bool) {
 	return nil, false
 }
 
+func list(expression s.PathExpression) ([]s.PathExpression, bool) {
+	if expr, ok := expression.(s.List); ok {
+		return expr.List(), true
+	}
+	return nil, false
+}
+
 func left(expression s.PathExpression) (s.PathExpression, bool) {
 	if expr, ok := expression.(s.Branch); ok {
 		expression = expr.Left()
@@ -168,8 +197,6 @@ func filterByName(expression s.PathExpression, nodes []s.Element) []s.Element {
 	if expr, ok := expression.(s.Name); ok {
 		name := expr.Name()
 
-		// fmt.Println("Name :", name, len(nodes))
-
 		for _, v := range nodes {
 			if v.Name() == name {
 				res = append(res, v)
@@ -184,8 +211,6 @@ func filterByIndex(expression s.PathExpression, nodes []s.Element) []s.Element {
 
 	if expr, ok := expression.(s.Index); ok {
 		index := expr.Index()
-
-		// fmt.Println("Index :", index, len(nodes))
 
 		if num := len(nodes); index >= 0 && index < num {
 			res = append(res, nodes[index])

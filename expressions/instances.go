@@ -78,7 +78,7 @@ func (p groupType) Type() s.PathExpressionType {
 	return s.PETGroup
 }
 
-func (p groupType) Expressions() []s.PathExpression {
+func (p groupType) List() []s.PathExpression {
 	return p.expressions
 }
 

@@ -248,3 +248,29 @@ func Test_PathLexerWithTypesForForwardSlashesAndNamed(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func Test_PathLexerWithTypesForGroup(t *testing.T) {
+	var (
+		f = func(a Named) string {
+			var (
+				lex  = NewPathLexer(fmt.Sprintf("/%s.()", a.String())).With(s.PathTokenTypes())
+				iter = lex.Iter()
+
+				v = next(t, iter).Val()
+				w = next(t, iter).Val()
+				x = next(t, iter).Val()
+				y = next(t, iter).Val()
+				z = next(t, iter).Val()
+			)
+
+			return fmt.Sprintf("%s%s%s%s%s", v, w, x, y, z)
+		}
+		g = func(a Named) string {
+			return fmt.Sprintf("/%s.()", a.String())
+		}
+	)
+
+	if err := quick.CheckEqual(f, g, nil); err != nil {
+		t.Error(err)
+	}
+}

@@ -31,6 +31,7 @@ func NewPathParser(iter s.PathLexerIterator) s.PathParser {
 			s.PTTString:       parselets.MakePathString(),
 			s.PTTAsterisk:     parselets.MakePathWildcard(),
 			s.PTTForwardSlash: parselets.MakePathDescendants(),
+			s.PTTLeftParen:    parselets.MakePathGroup(),
 		},
 		infix: map[s.PathTokenType]s.PathInfixParselet{
 			s.PTTDot:          parselets.MakePathInstance(),
@@ -50,6 +51,8 @@ func (p *pathParser) ParseExpressionBy(precedence s.PathPrecedence) (s.PathExpre
 	if err != nil {
 		return nil, err
 	}
+
+	// fmt.Println("Prefix", token)
 
 	prefix, ok := p.prefix[token.Type()]
 	if !ok {
@@ -73,13 +76,17 @@ func (p *pathParser) ParseExpressionBy(precedence s.PathPrecedence) (s.PathExpre
 				return nil, err
 			}
 
+			// fmt.Println("Infix", token)
+
 			infix, ok := p.infix[token.Type()]
 			if !ok {
 				return nil, ErrParseInfixError
 			}
 
 			expression, err = infix.Parse(p, expression, token)
-
+			if err != nil {
+				return nil, err
+			}
 			continue
 		}
 		break

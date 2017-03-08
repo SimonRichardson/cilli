@@ -82,6 +82,28 @@ loop:
 			}
 
 			if token == s.PTTNumber {
+				if buffer.Len() == 1 {
+					// Work out if it's just an invalid number (., -, etc)
+					nan, _, err := buffer.ReadRune()
+					if err != nil {
+						return s.PathToken{}, err
+					}
+					if !(nan >= 48 && nan <= 57) {
+						if tokenType, ok := i.types[nan]; ok {
+							// We gone too far, we're not what we think we are,
+							// so rewind the rune, so we can move forward again.
+							if err := i.reader.UnreadRune(); err != nil {
+								return s.PathToken{}, err
+							}
+
+							return s.MakePathToken(tokenType, string(nan)), nil
+						}
+					}
+					if err := buffer.UnreadRune(); err != nil {
+						return s.PathToken{}, err
+					}
+				}
+
 				if err := i.reader.UnreadRune(); err != nil {
 					return s.PathToken{}, err
 				}

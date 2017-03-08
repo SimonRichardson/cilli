@@ -160,3 +160,29 @@ func Test_PathParserWithTypesForNamedIndexAccess(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func Test_PathParserWithTypesForNamedGroup(t *testing.T) {
+	var (
+		f = func(a Named) s.PathExpression {
+			var (
+				lex      = NewPathLexer(fmt.Sprintf("%s.()", a.String())).With(s.PathTokenTypes())
+				parser   = NewPathParser(lex.Iter())
+				res, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+			return res
+		}
+		g = func(a Named) s.PathExpression {
+			return expressions.MakePathInstance(
+				expressions.MakePathName(a.String()),
+				expressions.MakePathGroup([]s.PathExpression{}),
+			)
+		}
+	)
+
+	if err := quick.CheckEqual(f, g, nil); err != nil {
+		t.Error(err)
+	}
+}

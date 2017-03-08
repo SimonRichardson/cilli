@@ -8,3 +8,7 @@ type Branch interface {
 	Left() PathExpression
 	Right() PathExpression
 }
+
+type List interface {
+	List() []PathExpression
+}
