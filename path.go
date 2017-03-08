@@ -43,8 +43,6 @@ func (p *Path) Execute(element s.Element) ([]s.Element, error) {
 	switch expression.Type() {
 	case s.PETWildcard:
 		expression = expressions.MakePathDescendants(s.PDTAll, expression)
-	case s.PETName:
-		expression = expressions.MakePathDescendants(s.PDTContext, expression)
 	}
 
 	// Loop through everything.
@@ -73,12 +71,19 @@ loop:
 				switch x.Type() {
 				case s.PETName:
 					nodes = filterByName(x, nodes)
+				default:
+					return nil, ErrUnexpectedExpression
 				}
 
 				if y, ok := right(expression); ok {
 					switch y.Type() {
 					case s.PETName:
 						expression = expressions.MakePathDescendants(s.PDTContext, y)
+					case s.PETNameDescendants:
+						nodes = getContextChildren(nodes)
+						expression = y
+					default:
+						return nil, ErrUnexpectedExpression
 					}
 					continue loop
 				}
