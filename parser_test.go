@@ -129,3 +129,34 @@ func Test_PathParserWithTypesForTwoForwardSlashes(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func Test_PathParserWithTypesForNamedIndexAccess(t *testing.T) {
+	var (
+		clamp = func(fn func(Named, uint) s.PathExpression) func(Named, uint) s.PathExpression {
+			return func(a Named, b uint) s.PathExpression {
+				return fn(a, b%1000)
+			}
+		}
+		f = clamp(func(a Named, b uint) s.PathExpression {
+			var (
+				lex      = NewPathLexer(fmt.Sprintf("%s[%d]", a.String(), b)).With(s.PathTokenTypes())
+				parser   = NewPathParser(lex.Iter())
+				res, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+			return res
+		})
+		g = clamp(func(a Named, b uint) s.PathExpression {
+			return expressions.MakePathIndexAccess(
+				expressions.MakePathName(a.String()),
+				expressions.MakePathNumber(float64(b)),
+			)
+		})
+	)
+
+	if err := quick.CheckEqual(f, g, nil); err != nil {
+		t.Error(err)
+	}
+}

@@ -107,6 +107,10 @@ func (p numberType) Val() float64 {
 	return p.value
 }
 
+func (p numberType) Index() int {
+	return int(p.value)
+}
+
 func (p numberType) Describe(w *bufio.Writer) error {
 	_, err := w.WriteString(fmt.Sprintf("%f", p.value))
 	return err

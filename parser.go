@@ -35,6 +35,7 @@ func NewPathParser(iter s.PathLexerIterator) s.PathParser {
 		infix: map[s.PathTokenType]s.PathInfixParselet{
 			s.PTTDot:          parselets.MakePathInstance(),
 			s.PTTForwardSlash: parselets.MakePathNameDescendants(),
+			s.PTTLeftSquare:   parselets.MakePathIndexAccess(),
 		},
 		stream: []s.PathToken{},
 	}

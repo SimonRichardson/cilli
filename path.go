@@ -48,6 +48,8 @@ func (p *Path) Execute(element s.Element) ([]s.Element, error) {
 	// Loop through everything.
 loop:
 	for {
+		// fmt.Println(">", expression.Type(), expression)
+
 		switch expression.Type() {
 		case s.PETWildcard:
 			res = nodes
@@ -68,20 +70,39 @@ loop:
 			return nil, ErrUnexpectedExpression
 		case s.PETNameDescendants:
 			if x, ok := left(expression); ok {
+				// fmt.Println("Left", x.Type(), x, len(nodes))
 				switch x.Type() {
 				case s.PETName:
 					nodes = filterByName(x, nodes)
+				case s.PETIndexAccess:
+					if y, ok := left(x); ok {
+						nodes = filterByName(y, nodes)
+
+						if z, ok := right(x); ok {
+							nodes = filterByIndex(z, nodes)
+							break
+						}
+					}
+					return nil, ErrUnexpectedExpression
 				default:
 					return nil, ErrUnexpectedExpression
 				}
 
 				if y, ok := right(expression); ok {
+					// fmt.Println("Right", y.Type(), y, len(nodes))
 					switch y.Type() {
 					case s.PETName:
 						expression = expressions.MakePathDescendants(s.PDTContext, y)
 					case s.PETNameDescendants:
 						nodes = getContextChildren(nodes)
 						expression = y
+					case s.PETWildcard:
+						expression = y
+					case s.PETIndexAccess:
+						expression = expressions.MakePathDescendants(
+							s.PDTContext,
+							expressions.MakePathNameDescendants(y, expressions.MakePathWildcard()),
+						)
 					default:
 						return nil, ErrUnexpectedExpression
 					}
@@ -147,11 +168,29 @@ func filterByName(expression s.PathExpression, nodes []s.Element) []s.Element {
 	if expr, ok := expression.(s.Name); ok {
 		name := expr.Name()
 
+		// fmt.Println("Name :", name, len(nodes))
+
 		for _, v := range nodes {
 			if v.Name() == name {
 				res = append(res, v)
 			}
 		}
 	}
+	return res
+}
+
+func filterByIndex(expression s.PathExpression, nodes []s.Element) []s.Element {
+	var res []s.Element
+
+	if expr, ok := expression.(s.Index); ok {
+		index := expr.Index()
+
+		// fmt.Println("Index :", index, len(nodes))
+
+		if num := len(nodes); index >= 0 && index < num {
+			res = append(res, nodes[index])
+		}
+	}
+
 	return res
 }

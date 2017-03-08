@@ -31,7 +31,7 @@ const (
 	PTTQuestionMark
 	PTTColon
 	PTTLeftSquare
-	PTTRightSequre
+	PTTRightSquare
 	PTTAttribute
 	PTTName
 	PTTUnsignedInteger
@@ -74,7 +74,7 @@ func (p PathTokenType) Rune() rune {
 		return ':'
 	case PTTLeftSquare:
 		return '['
-	case PTTRightSequre:
+	case PTTRightSquare:
 		return ']'
 	case PTTAttribute:
 		return '@'
@@ -130,7 +130,7 @@ func (p PathTokenType) String() string {
 		return ":"
 	case PTTLeftSquare:
 		return "["
-	case PTTRightSequre:
+	case PTTRightSquare:
 		return "]"
 	case PTTAttribute:
 		return "@"
@@ -169,7 +169,7 @@ func PathTokenTypes() []PathTokenType {
 		PTTQuestionMark,
 		PTTColon,
 		PTTLeftSquare,
-		PTTRightSequre,
+		PTTRightSquare,
 		PTTAttribute,
 		PTTDot,
 		PTTAmpersand,

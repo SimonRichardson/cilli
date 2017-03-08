@@ -239,7 +239,7 @@ func Test_PathExecuteForwardSlashWithName(t *testing.T) {
 	}
 }
 
-func XTest_PathExecuteForwardSlashWithNameThenName(t *testing.T) {
+func Test_PathExecuteForwardSlashWithNameThenName(t *testing.T) {
 	var (
 		f = clamp(func(a uint) bool {
 			var (
@@ -289,6 +289,200 @@ func Test_PathExecuteNoForwardSlashWithNameThenName(t *testing.T) {
 				t.Error(err)
 			}
 			return len(res) == int(a)*10
+		})
+	)
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathExecuteForwardSlashWithNameThenNameAndWildcard(t *testing.T) {
+	var (
+		f = clamp(func(a uint) bool {
+			var (
+				types     = s.PathTokenTypes()
+				lex       = NewPathLexer("/node/subnode/*").With(types)
+				parser    = NewPathParser(lex.Iter())
+				expr, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+
+			path := NewPath(expr)
+			res, err := path.Execute(MakeElement("root", func() []s.Element {
+				return MakeElementsWithChildren(a, 10)
+			}))
+			if err != nil {
+				t.Error(err)
+			}
+			return len(res) == int(a)*10
+		})
+	)
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathExecuteNoForwardSlashWithNameThenNameAndWildcard(t *testing.T) {
+	var (
+		f = clamp(func(a uint) bool {
+			var (
+				types     = s.PathTokenTypes()
+				lex       = NewPathLexer("root/node/subnode/*").With(types)
+				parser    = NewPathParser(lex.Iter())
+				expr, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+
+			path := NewPath(expr)
+			res, err := path.Execute(MakeElement("root", func() []s.Element {
+				return MakeElementsWithChildren(a, 10)
+			}))
+			if err != nil {
+				t.Error(err)
+			}
+			return len(res) == int(a)*10
+		})
+	)
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathExecuteForwardSlashWithIndexThenName(t *testing.T) {
+	var (
+		f = clamp(func(a uint) bool {
+			var (
+				types     = s.PathTokenTypes()
+				lex       = NewPathLexer("/node[0]/subnode").With(types)
+				parser    = NewPathParser(lex.Iter())
+				expr, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+
+			path := NewPath(expr)
+			res, err := path.Execute(MakeElement("root", func() []s.Element {
+				return MakeElementsWithChildren(a, 10)
+			}))
+			if err != nil {
+				t.Error(err)
+			}
+			for _, v := range res {
+				if v.Name() != "subnode" {
+					return false
+				}
+			}
+			return len(res) == 10
+		})
+	)
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathExecuteForwardSlashWithIndexThenNameAndIndex(t *testing.T) {
+	var (
+		f = clamp(func(a uint) bool {
+			var (
+				types     = s.PathTokenTypes()
+				lex       = NewPathLexer("/node[0]/subnode[0]").With(types)
+				parser    = NewPathParser(lex.Iter())
+				expr, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+
+			path := NewPath(expr)
+			res, err := path.Execute(MakeElement("root", func() []s.Element {
+				return MakeElementsWithChildren(a, 10)
+			}))
+			if err != nil {
+				t.Error(err)
+			}
+			for _, v := range res {
+				if v.Name() != "subnode" {
+					return false
+				}
+			}
+			return len(res) == 1
+		})
+	)
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathExecuteNoForwardSlashWithIndexThenName(t *testing.T) {
+	var (
+		f = clamp(func(a uint) bool {
+			var (
+				types     = s.PathTokenTypes()
+				lex       = NewPathLexer("root/node[0]/subnode").With(types)
+				parser    = NewPathParser(lex.Iter())
+				expr, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+
+			path := NewPath(expr)
+			res, err := path.Execute(MakeElement("root", func() []s.Element {
+				return MakeElementsWithChildren(a, 10)
+			}))
+			if err != nil {
+				t.Error(err)
+			}
+			for _, v := range res {
+				if v.Name() != "subnode" {
+					return false
+				}
+			}
+			return len(res) == 10
+		})
+	)
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathExecuteNoForwardSlashWithIndexThenNameAndIndex(t *testing.T) {
+	var (
+		f = clamp(func(a uint) bool {
+			var (
+				types     = s.PathTokenTypes()
+				lex       = NewPathLexer("root/node[0]/subnode[0]").With(types)
+				parser    = NewPathParser(lex.Iter())
+				expr, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+
+			path := NewPath(expr)
+			res, err := path.Execute(MakeElement("root", func() []s.Element {
+				return MakeElementsWithChildren(a, 10)
+			}))
+			if err != nil {
+				t.Error(err)
+			}
+			for _, v := range res {
+				if v.Name() != "subnode" {
+					return false
+				}
+			}
+			return len(res) == 1
 		})
 	)
 
