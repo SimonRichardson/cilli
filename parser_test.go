@@ -238,7 +238,7 @@ func Test_PathParserWithTypesForDoubleGroupWithEquality(t *testing.T) {
 				s.PDTContext,
 				expressions.MakePathInstance(
 					expressions.MakePathName(a.String()),
-					expressions.MakePathNameDescendants(
+					expressions.MakePathBranch(
 						expressions.MakePathGroup([]s.PathExpression{
 							expressions.MakePathAttribute(),
 							expressions.MakePathEquality(

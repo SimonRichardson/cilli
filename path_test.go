@@ -602,10 +602,9 @@ func Test_PathExecuteForwardSlashWithIndexThenNameAndGroupEquality(t *testing.T)
 	}
 }
 
-func XTest_PathExecuteForwardSlashWithDoubleGroupEquality(t *testing.T) {
+func Test_PathExecuteForwardSlashWithDoubleGroupEquality(t *testing.T) {
 	var (
 		f = clamp(func(a uint) bool {
-			a = 3
 			var (
 				types     = s.PathTokenTypes()
 				lex       = NewPathLexer("/node.(@Name==\"node\")/subnode.(@Name==\"subnode\")").With(types)
@@ -618,7 +617,6 @@ func XTest_PathExecuteForwardSlashWithDoubleGroupEquality(t *testing.T) {
 
 			path := NewPath(expr).With(PathPredicate{
 				Equality: func(elem s.Element, prop string, value interface{}) bool {
-					fmt.Println("Equality", elem.Name(), prop, value)
 					if prop == "Name" {
 						if str, err := strconv.Unquote(value.(string)); err == nil {
 							return elem.Name() == str
@@ -638,7 +636,7 @@ func XTest_PathExecuteForwardSlashWithDoubleGroupEquality(t *testing.T) {
 					return false
 				}
 			}
-			return len(res) == 10
+			return len(res) == int(a)*10
 		})
 	)
 

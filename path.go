@@ -56,13 +56,9 @@ func (p *Path) Execute(element s.Element) ([]s.Element, error) {
 		expression = expressions.MakePathDescendants(s.PDTAll, expression)
 	}
 
-	//fmt.Println("-------------------")
-
 	// Loop through everything.
 loop:
 	for {
-		//fmt.Println(">", expression.Type(), expression)
-
 		switch expression.Type() {
 		case s.PETWildcard:
 			res = nodes
@@ -83,10 +79,8 @@ loop:
 			return nil, ErrUnexpectedExpression
 		case s.PETNameDescendants, s.PETInstance, s.PETbranch:
 			if x, ok := left(expression); ok {
-				//fmt.Println("Left >", x.Type(), x, len(nodes))
 				switch x.Type() {
 				case s.PETName:
-					//fmt.Println("Left Name >", len(nodes), nodes)
 					nodes = filterByName(x, nodes)
 				case s.PETIndexAccess:
 					if y, ok := left(x); ok {
@@ -99,7 +93,6 @@ loop:
 					}
 					return nil, ErrUnexpectedExpression
 				case s.PETGroup:
-					// fmt.Println("Left Group >", x, len(nodes), nodes)
 					if n, _, ok := group(p.predicate, x, nodes); ok {
 						nodes = n
 						break
@@ -110,7 +103,6 @@ loop:
 				}
 
 				if y, ok := right(expression); ok {
-					// fmt.Println("Right >", y.Type(), y, len(nodes))
 					switch y.Type() {
 					case s.PETName:
 						expression = expressions.MakePathDescendants(s.PDTContext, y)
@@ -125,7 +117,6 @@ loop:
 							expressions.MakePathNameDescendants(y, expressions.MakePathWildcard()),
 						)
 					case s.PETGroup:
-						// fmt.Println("Right Group >", y, len(nodes))
 						if n, expr, ok := group(p.predicate, y, nodes); ok {
 							nodes = n
 							expression = expr
@@ -202,7 +193,6 @@ func group(predicates PathPredicate, expr s.PathExpression, nodes []s.Element) (
 	if exprs, ok := list(expr); ok {
 	loop:
 		for k, v := range exprs {
-			// fmt.Println("Inner", v.Type())
 			switch v.Type() {
 			case s.PETAttribute:
 				if next, ok := peek(exprs, k+1); ok && validAttribute(next) {
@@ -210,11 +200,9 @@ func group(predicates PathPredicate, expr s.PathExpression, nodes []s.Element) (
 				}
 				return nil, nil, false
 			case s.PETEquality:
-				// fmt.Println(">>", len(nodes))
 				if x, ok := left(v); ok {
 					if y, ok := right(v); ok {
 						nodes = filterByPredicate(predicates.Equality, x, y, nodes)
-						// fmt.Println(">>>", len(nodes))
 						continue loop
 					}
 				}
