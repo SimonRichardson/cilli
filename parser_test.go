@@ -186,3 +186,83 @@ func Test_PathParserWithTypesForNamedGroup(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func Test_PathParserWithTypesForNamedGroupWithEquality(t *testing.T) {
+	var (
+		f = func(a Named) s.PathExpression {
+			var (
+				lex      = NewPathLexer(fmt.Sprintf("%s.(@Name==%q)", a.String(), a.String())).With(s.PathTokenTypes())
+				parser   = NewPathParser(lex.Iter())
+				res, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+			return res
+		}
+		g = func(a Named) s.PathExpression {
+			return expressions.MakePathInstance(
+				expressions.MakePathName(a.String()),
+				expressions.MakePathGroup([]s.PathExpression{
+					expressions.MakePathAttribute(),
+					expressions.MakePathEquality(
+						expressions.MakePathName("Name"),
+						expressions.MakePathString(fmt.Sprintf("%q", a.String())),
+					),
+				}),
+			)
+		}
+	)
+
+	if err := quick.CheckEqual(f, g, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathParserWithTypesForDoubleGroupWithEquality(t *testing.T) {
+	var (
+		f = func(a Named) s.PathExpression {
+			var (
+				dsl      = fmt.Sprintf("/%s.(@Name==%q)/%s.(@Name==%q)", a.String(), a.String(), a.String(), a.String())
+				lex      = NewPathLexer(dsl).With(s.PathTokenTypes())
+				parser   = NewPathParser(lex.Iter())
+				res, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+			return res
+		}
+		g = func(a Named) s.PathExpression {
+			return expressions.MakePathDescendants(
+				s.PDTContext,
+				expressions.MakePathInstance(
+					expressions.MakePathName(a.String()),
+					expressions.MakePathNameDescendants(
+						expressions.MakePathGroup([]s.PathExpression{
+							expressions.MakePathAttribute(),
+							expressions.MakePathEquality(
+								expressions.MakePathName("Name"),
+								expressions.MakePathString(fmt.Sprintf("%q", a.String())),
+							),
+						}),
+						expressions.MakePathInstance(
+							expressions.MakePathName(a.String()),
+							expressions.MakePathGroup([]s.PathExpression{
+								expressions.MakePathAttribute(),
+								expressions.MakePathEquality(
+									expressions.MakePathName("Name"),
+									expressions.MakePathString(fmt.Sprintf("%q", a.String())),
+								),
+							}),
+						),
+					),
+				),
+			)
+		}
+	)
+
+	if err := quick.CheckEqual(f, g, nil); err != nil {
+		t.Error(err)
+	}
+}

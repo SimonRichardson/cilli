@@ -54,6 +54,53 @@ func (p nameDescendantsType) Right() s.PathExpression {
 	return p.right
 }
 
+type branchType struct {
+	left, right s.PathExpression
+}
+
+func MakePathBranch(left, right s.PathExpression) s.PathExpression {
+	return branchType{
+		left:  left,
+		right: right,
+	}
+}
+
+func (p branchType) Type() s.PathExpressionType {
+	return s.PETbranch
+}
+
+func (p branchType) Describe(w *bufio.Writer) error {
+	if x, ok := p.left.(s.Describe); ok {
+		if err := x.Describe(w); err != nil {
+			return err
+		}
+	}
+
+	if _, err := w.WriteRune('('); err != nil {
+		return err
+	}
+
+	if x, ok := p.right.(s.Describe); ok {
+		if err := x.Describe(w); err != nil {
+			return err
+		}
+	}
+
+	if _, err := w.WriteRune(')'); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p branchType) Left() s.PathExpression {
+	return p.left
+}
+
+func (p branchType) Right() s.PathExpression {
+	return p.right
+}
+
 type instanceType struct {
 	left, right s.PathExpression
 }

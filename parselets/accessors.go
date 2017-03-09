@@ -51,6 +51,25 @@ func (p pathNameDescendants) Precedence() s.PathPrecedence {
 	return s.PPPostfix
 }
 
+type pathBranch struct{}
+
+func MakePathBranch() s.PathInfixParselet {
+	return pathBranch{}
+}
+
+func (p pathBranch) Parse(parser s.PathParser, expr s.PathExpression, token s.PathToken) (s.PathExpression, error) {
+	right, err := parser.ParseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	return expressions.MakePathBranch(expr, right), nil
+}
+
+func (p pathBranch) Precedence() s.PathPrecedence {
+	return s.PPPostfix
+}
+
 type pathIndexAccess struct{}
 
 func MakePathIndexAccess() s.PathInfixParselet {

@@ -32,11 +32,14 @@ func NewPathParser(iter s.PathLexerIterator) s.PathParser {
 			s.PTTAsterisk:     parselets.MakePathWildcard(),
 			s.PTTForwardSlash: parselets.MakePathDescendants(),
 			s.PTTLeftParen:    parselets.MakePathGroup(),
+			s.PTTAttribute:    parselets.MakePathAttribute(),
 		},
 		infix: map[s.PathTokenType]s.PathInfixParselet{
 			s.PTTDot:          parselets.MakePathInstance(),
 			s.PTTForwardSlash: parselets.MakePathNameDescendants(),
 			s.PTTLeftSquare:   parselets.MakePathIndexAccess(),
+			s.PTTAttribute:    parselets.MakePathInfixAttribute(),
+			s.PTTEquality:     parselets.MakePathEquality(),
 		},
 		stream: []s.PathToken{},
 	}

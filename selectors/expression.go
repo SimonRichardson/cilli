@@ -7,6 +7,7 @@ const (
 	PETAllDescendants
 	PETDescendants
 	PETNameDescendants
+	PETbranch
 	PETString
 	PETName
 	PETIndexAccess
@@ -39,6 +40,8 @@ func (p PathExpressionType) String() string {
 		return "Descendants"
 	case PETNameDescendants:
 		return "NamedDescendants"
+	case PETbranch:
+		return "Branch"
 	case PETString:
 		return "String"
 	case PETName:

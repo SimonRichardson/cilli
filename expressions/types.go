@@ -24,6 +24,10 @@ func (p emptyType) Describe(w *bufio.Writer) error {
 	return err
 }
 
+func (p emptyType) Value() interface{} {
+	return nil
+}
+
 type booleanType struct {
 	value bool
 }
@@ -37,6 +41,10 @@ func (p booleanType) Type() s.PathExpressionType {
 }
 
 func (p booleanType) Val() bool {
+	return p.value
+}
+
+func (p booleanType) Value() interface{} {
 	return p.value
 }
 
@@ -61,6 +69,10 @@ func (p integerType) Val() int {
 	return p.value
 }
 
+func (p integerType) Value() interface{} {
+	return p.value
+}
+
 func (p integerType) Describe(w *bufio.Writer) error {
 	_, err := w.WriteString(fmt.Sprintf("%d", p.value))
 	return err
@@ -79,6 +91,10 @@ func (p nameType) Type() s.PathExpressionType {
 }
 
 func (p nameType) Val() string {
+	return p.value
+}
+
+func (p nameType) Value() interface{} {
 	return p.value
 }
 
@@ -107,6 +123,10 @@ func (p numberType) Val() float64 {
 	return p.value
 }
 
+func (p numberType) Value() interface{} {
+	return p.value
+}
+
 func (p numberType) Index() int {
 	return int(p.value)
 }
@@ -129,6 +149,10 @@ func (p stringType) Type() s.PathExpressionType {
 }
 
 func (p stringType) Val() string {
+	return p.value
+}
+
+func (p stringType) Value() interface{} {
 	return p.value
 }
 

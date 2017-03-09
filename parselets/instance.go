@@ -43,3 +43,32 @@ func (p pathGroup) Parse(parser s.PathParser, token s.PathToken) (s.PathExpressi
 
 	return expressions.MakePathGroup(exprs), nil
 }
+
+type pathAttribute struct{}
+
+func MakePathAttribute() s.PathPrefixParselet {
+	return pathAttribute{}
+}
+
+func (p pathAttribute) Parse(parser s.PathParser, token s.PathToken) (s.PathExpression, error) {
+	return expressions.MakePathAttribute(), nil
+}
+
+type pathInfixAttribute struct{}
+
+func MakePathInfixAttribute() s.PathInfixParselet {
+	return pathInfixAttribute{}
+}
+
+func (p pathInfixAttribute) Parse(parser s.PathParser, expr s.PathExpression, token s.PathToken) (s.PathExpression, error) {
+	right, err := parser.ParseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	return expressions.MakePathInfixAttribute(expr, right), nil
+}
+
+func (p pathInfixAttribute) Precedence() s.PathPrecedence {
+	return s.PPPostfix
+}

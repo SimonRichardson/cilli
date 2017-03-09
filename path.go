@@ -13,8 +13,8 @@ var (
 )
 
 type PathPredicate struct {
-	Equality   func(s.Element, string, string) bool
-	Inequality func(s.Element, string, string) bool
+	Equality   func(s.Element, string, interface{}) bool
+	Inequality func(s.Element, string, interface{}) bool
 }
 
 type Path struct {
@@ -56,6 +56,8 @@ func (p *Path) Execute(element s.Element) ([]s.Element, error) {
 		expression = expressions.MakePathDescendants(s.PDTAll, expression)
 	}
 
+	//fmt.Println("-------------------")
+
 	// Loop through everything.
 loop:
 	for {
@@ -79,11 +81,12 @@ loop:
 				continue loop
 			}
 			return nil, ErrUnexpectedExpression
-		case s.PETNameDescendants, s.PETInstance:
+		case s.PETNameDescendants, s.PETInstance, s.PETbranch:
 			if x, ok := left(expression); ok {
-				//fmt.Println("Left", x.Type(), x, len(nodes))
+				//fmt.Println("Left >", x.Type(), x, len(nodes))
 				switch x.Type() {
 				case s.PETName:
+					//fmt.Println("Left Name >", len(nodes), nodes)
 					nodes = filterByName(x, nodes)
 				case s.PETIndexAccess:
 					if y, ok := left(x); ok {
@@ -95,19 +98,26 @@ loop:
 						}
 					}
 					return nil, ErrUnexpectedExpression
+				case s.PETGroup:
+					// fmt.Println("Left Group >", x, len(nodes), nodes)
+					if n, _, ok := group(p.predicate, x, nodes); ok {
+						nodes = n
+						break
+					}
+					return nil, ErrUnexpectedExpression
 				default:
 					return nil, ErrUnexpectedExpression
 				}
 
 				if y, ok := right(expression); ok {
-					//fmt.Println("Right", y.Type(), y, len(nodes))
+					// fmt.Println("Right >", y.Type(), y, len(nodes))
 					switch y.Type() {
 					case s.PETName:
 						expression = expressions.MakePathDescendants(s.PDTContext, y)
 					case s.PETNameDescendants, s.PETInstance:
 						nodes = getContextChildren(nodes)
 						expression = y
-					case s.PETWildcard:
+					case s.PETWildcard, s.PETbranch:
 						expression = y
 					case s.PETIndexAccess:
 						expression = expressions.MakePathDescendants(
@@ -115,13 +125,10 @@ loop:
 							expressions.MakePathNameDescendants(y, expressions.MakePathWildcard()),
 						)
 					case s.PETGroup:
-						if exprs, ok := list(y); ok {
-							for _, v := range exprs {
-								switch v.Type() {
-								case s.PETAttribute:
-								}
-							}
-							expression = expressions.MakePathWildcard()
+						// fmt.Println("Right Group >", y, len(nodes))
+						if n, expr, ok := group(p.predicate, y, nodes); ok {
+							nodes = n
+							expression = expr
 							continue loop
 						}
 						return nil, ErrUnexpectedExpression
@@ -191,6 +198,55 @@ func right(expression s.PathExpression) (s.PathExpression, bool) {
 	return nil, false
 }
 
+func group(predicates PathPredicate, expr s.PathExpression, nodes []s.Element) ([]s.Element, s.PathExpression, bool) {
+	if exprs, ok := list(expr); ok {
+	loop:
+		for k, v := range exprs {
+			// fmt.Println("Inner", v.Type())
+			switch v.Type() {
+			case s.PETAttribute:
+				if next, ok := peek(exprs, k+1); ok && validAttribute(next) {
+					continue loop
+				}
+				return nil, nil, false
+			case s.PETEquality:
+				// fmt.Println(">>", len(nodes))
+				if x, ok := left(v); ok {
+					if y, ok := right(v); ok {
+						nodes = filterByPredicate(predicates.Equality, x, y, nodes)
+						// fmt.Println(">>>", len(nodes))
+						continue loop
+					}
+				}
+			default:
+				return nil, nil, false
+			}
+		}
+
+		return nodes, expressions.MakePathWildcard(), true
+	}
+
+	return nil, nil, false
+}
+
+func peek(exprs []s.PathExpression, pos int) (s.PathExpression, bool) {
+	if num := len(exprs); pos >= 0 && pos < num {
+		return exprs[pos], true
+	}
+	return nil, false
+}
+
+func validAttribute(expr s.PathExpression) bool {
+	// A valid attribute should always have a left hand side of name.
+	switch expr.Type() {
+	case s.PETEquality:
+		if x, ok := left(expr); ok && x.Type() == s.PETName {
+			return true
+		}
+	}
+	return false
+}
+
 func filterByName(expression s.PathExpression, nodes []s.Element) []s.Element {
 	var res []s.Element
 
@@ -214,6 +270,29 @@ func filterByIndex(expression s.PathExpression, nodes []s.Element) []s.Element {
 
 		if num := len(nodes); index >= 0 && index < num {
 			res = append(res, nodes[index])
+		}
+	}
+
+	return res
+}
+
+func filterByPredicate(predicate func(s.Element, string, interface{}) bool,
+	left, right s.PathExpression,
+	nodes []s.Element,
+) []s.Element {
+	var res []s.Element
+
+	if x, ok := left.(s.Name); ok {
+		prop := x.Name()
+
+		if y, ok := right.(s.Value); ok {
+			value := y.Value()
+
+			for _, v := range nodes {
+				if predicate(v, prop, value) {
+					res = append(res, v)
+				}
+			}
 		}
 	}
 

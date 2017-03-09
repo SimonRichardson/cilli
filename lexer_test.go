@@ -7,6 +7,8 @@ import (
 	"testing"
 	"testing/quick"
 
+	"strings"
+
 	s "github.com/SimonRichardson/cilli/selectors"
 )
 
@@ -249,7 +251,7 @@ func Test_PathLexerWithTypesForForwardSlashesAndNamed(t *testing.T) {
 	}
 }
 
-func Test_PathLexerWithTypesForGroup(t *testing.T) {
+func Test_PathLexerWithTypesForEmptyGroup(t *testing.T) {
 	var (
 		f = func(a Named) string {
 			var (
@@ -267,6 +269,59 @@ func Test_PathLexerWithTypesForGroup(t *testing.T) {
 		}
 		g = func(a Named) string {
 			return fmt.Sprintf("/%s.()", a.String())
+		}
+	)
+
+	if err := quick.CheckEqual(f, g, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathLexerWithTypesForGroupEquality(t *testing.T) {
+	var (
+		f = func(name Named) string {
+			var (
+				lex  = NewPathLexer(fmt.Sprintf("/%s.(@Name==%q)", name.String(), name.String())).With(s.PathTokenTypes())
+				iter = lex.Iter()
+
+				args = vals(t, iter, 10)
+			)
+
+			return fmt.Sprintf(strings.Repeat("%s", len(args)), args...)
+		}
+		g = func(name Named) string {
+			return fmt.Sprintf("/%s.(@Name==%q)", name.String(), name.String())
+		}
+	)
+
+	if err := quick.CheckEqual(f, g, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func vals(t *testing.T, iter s.PathLexerIterator, amount int) []interface{} {
+	res := make([]interface{}, amount)
+	for i := 0; i < amount; i++ {
+		res[i] = next(t, iter).Val()
+	}
+	return res
+}
+
+func Test_PathLexerWithTypesForDoubleGroupEquality(t *testing.T) {
+	var (
+		f = func(name Named) string {
+			var (
+				dsl  = fmt.Sprintf("/%s.(@Name==%q)/%s.(@Name==%q)", name.String(), name.String(), name.String(), name.String())
+				lex  = NewPathLexer(dsl).With(s.PathTokenTypes())
+				iter = lex.Iter()
+
+				args = vals(t, iter, 20)
+			)
+
+			return fmt.Sprintf(strings.Repeat("%s", len(args)), args...)
+		}
+		g = func(name Named) string {
+			return fmt.Sprintf("/%s.(@Name==%q)/%s.(@Name==%q)", name.String(), name.String(), name.String(), name.String())
 		}
 	)
 

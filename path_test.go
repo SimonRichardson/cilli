@@ -491,7 +491,7 @@ func Test_PathExecuteNoForwardSlashWithIndexThenNameAndIndex(t *testing.T) {
 	}
 }
 
-func Test_PathExecuteForwardSlashWithIndexThenNameAndGroup(t *testing.T) {
+func Test_PathExecuteForwardSlashWithIndexThenNameAndEmptyGroup(t *testing.T) {
 	var (
 		f = clamp(func(a uint) bool {
 			var (
@@ -504,10 +504,80 @@ func Test_PathExecuteForwardSlashWithIndexThenNameAndGroup(t *testing.T) {
 				t.Error(err)
 			}
 
+			path := NewPath(expr)
+			res, err := path.Execute(MakeElement("root", func() []s.Element {
+				return MakeElementsWithChildren(a, 10)
+			}))
+			if err != nil {
+				t.Error(err)
+			}
+			for _, v := range res {
+				if v.Name() != "subnode" {
+					return false
+				}
+			}
+			return len(res) == 10
+		})
+	)
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathExecuteNoForwardSlashWithIndexThenNameAndEmptyGroup(t *testing.T) {
+	var (
+		f = clamp(func(a uint) bool {
+			var (
+				types     = s.PathTokenTypes()
+				lex       = NewPathLexer("root/node[0]/subnode.()").With(types)
+				parser    = NewPathParser(lex.Iter())
+				expr, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+
+			path := NewPath(expr)
+			res, err := path.Execute(MakeElement("root", func() []s.Element {
+				return MakeElementsWithChildren(a, 10)
+			}))
+			if err != nil {
+				t.Error(err)
+			}
+			for _, v := range res {
+				if v.Name() != "subnode" {
+					return false
+				}
+			}
+			return len(res) == 10
+		})
+	)
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_PathExecuteForwardSlashWithIndexThenNameAndGroupEquality(t *testing.T) {
+	var (
+		f = clamp(func(a uint) bool {
+			var (
+				types     = s.PathTokenTypes()
+				lex       = NewPathLexer("/node[0]/subnode.(@Name==\"subnode\")").With(types)
+				parser    = NewPathParser(lex.Iter())
+				expr, err = parser.ParseExpression()
+			)
+			if err != nil {
+				t.Error(err)
+			}
+
 			path := NewPath(expr).With(PathPredicate{
-				Equality: func(elem s.Element, prop string, value string) bool {
+				Equality: func(elem s.Element, prop string, value interface{}) bool {
 					if prop == "Name" {
-						return elem.Name() == value
+						if str, err := strconv.Unquote(value.(string)); err == nil {
+							return elem.Name() == str
+						}
 					}
 					return false
 				},
@@ -532,12 +602,13 @@ func Test_PathExecuteForwardSlashWithIndexThenNameAndGroup(t *testing.T) {
 	}
 }
 
-func Test_PathExecuteNoForwardSlashWithIndexThenNameAndGroup(t *testing.T) {
+func XTest_PathExecuteForwardSlashWithDoubleGroupEquality(t *testing.T) {
 	var (
 		f = clamp(func(a uint) bool {
+			a = 3
 			var (
 				types     = s.PathTokenTypes()
-				lex       = NewPathLexer("root/node[0]/subnode.()").With(types)
+				lex       = NewPathLexer("/node.(@Name==\"node\")/subnode.(@Name==\"subnode\")").With(types)
 				parser    = NewPathParser(lex.Iter())
 				expr, err = parser.ParseExpression()
 			)
@@ -546,9 +617,12 @@ func Test_PathExecuteNoForwardSlashWithIndexThenNameAndGroup(t *testing.T) {
 			}
 
 			path := NewPath(expr).With(PathPredicate{
-				Equality: func(elem s.Element, prop string, value string) bool {
+				Equality: func(elem s.Element, prop string, value interface{}) bool {
+					fmt.Println("Equality", elem.Name(), prop, value)
 					if prop == "Name" {
-						return elem.Name() == value
+						if str, err := strconv.Unquote(value.(string)); err == nil {
+							return elem.Name() == str
+						}
 					}
 					return false
 				},
